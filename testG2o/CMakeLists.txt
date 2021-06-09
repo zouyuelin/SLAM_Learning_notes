@@ -40,20 +40,31 @@ INCLUDE_DIRECTORIES(
                 ${Sophus_INCLUDE_DIRS})
 
 
-add_executable(${PROJECT_NAME}  g2o_fitting.cpp)
+add_executable(g2o_fitting  g2o_fitting.cpp)
 add_executable(curve_lambda curve_lambda.cpp)
 
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} 
-				      ${VTK_LIBRARIES} 
-				      ${OpenCV_LIBS} 
-				      ${Pangolin_LIBRARIES}
-				      ${Boost_LIBRARIES}
-				      ${Sophus_LIBRARIES}
-				      ${PCL_LIBRARIES}
-				      Qt5::Core Qt5::Widgets Qt5::Gui Qt5::Network
-                                      g2o_core g2o_csparse_extension g2o_types_sim3 g2o_stuff g2o_types_sba
-				      )
-					  
+
+TARGET_LINK_LIBRARIES(g2o_fitting
+         ${VTK_LIBRARIES}
+         ${OpenCV_LIBS}
+         ${Pangolin_LIBRARIES}
+         ${Boost_LIBRARIES}
+         ${Sophus_LIBRARIES}
+         ${PCL_LIBRARIES}
+         Qt5::Core Qt5::Widgets Qt5::Gui Qt5::Network
+         g2o_core g2o_csparse_extension g2o_types_sim3 g2o_stuff g2o_types_sba
+         )
+
+TARGET_LINK_LIBRARIES(curve_lambda
+        ${VTK_LIBRARIES}
+        ${OpenCV_LIBS}
+        ${Pangolin_LIBRARIES}
+        ${Boost_LIBRARIES}
+        ${Sophus_LIBRARIES}
+        ${PCL_LIBRARIES}
+        Qt5::Core Qt5::Widgets Qt5::Gui Qt5::Network
+        g2o_core g2o_csparse_extension g2o_types_sim3 g2o_stuff g2o_types_sba)
+
 message(STATUS "OPENCV is :${OpenCV_INCLUDE_DIRS}")
 message(STATUS "OPENCV version is :${OpenCV_VERSION}")
 
