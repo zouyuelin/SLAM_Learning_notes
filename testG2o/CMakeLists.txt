@@ -31,27 +31,27 @@ find_package( Sophus REQUIRED)
 find_package( Boost REQUIRED)
 
 INCLUDE_DIRECTORIES(
-				 ${PROJECT_SOURCE_DIR}
-				 ${Pangolin_INCLUDE_DIRS}
-				 ${OpenCV_INCLUDE_DIRS}
-				 ${PCL_INCLUDE_DIRS}
-				 ${PCL_INCLUDE_DIRS}
-				 ${BOOST_INCLUDE_DIRS}
-				 ${EIGEN3_INCLUDE_DIRS}
-				 ${Sophus_INCLUDE_DIRS})    
+                ${PROJECT_SOURCE_DIR}
+                ${Pangolin_INCLUDE_DIRS}
+                ${OpenCV_INCLUDE_DIRS}
+                ${PCL_INCLUDE_DIRS}
+                ${BOOST_INCLUDE_DIRS}
+                ${EIGEN3_INCLUDE_DIRS}
+                ${Sophus_INCLUDE_DIRS})
 
 
-add_executable(${PROJECT_NAME}  main.cpp)
+add_executable(${PROJECT_NAME}  g2o_fitting.cpp)
+add_executable(curve_lambda curve_lambda.cpp)
 
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} 
 				      ${VTK_LIBRARIES} 
 				      ${OpenCV_LIBS} 
 				      ${Pangolin_LIBRARIES}
 				      ${Boost_LIBRARIES}
-					  ${Sophus_LIBRARIES}
-					  ${PCL_LIBRARIES}
+				      ${Sophus_LIBRARIES}
+				      ${PCL_LIBRARIES}
 				      Qt5::Core Qt5::Widgets Qt5::Gui Qt5::Network
-				      g2o_core g2o_csparse_extension g2o_types_sim3 g2o_stuff g2o_types_sba
+                                      g2o_core g2o_csparse_extension g2o_types_sim3 g2o_stuff g2o_types_sba
 				      )
 					  
 message(STATUS "OPENCV is :${OpenCV_INCLUDE_DIRS}")
