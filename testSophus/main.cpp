@@ -46,8 +46,8 @@ int main()
     // 利用对数映射获得它的李代数，使用log函数
     Eigen::Vector3d so3_1 = Rotation_1.log();
     Eigen::Vector3d so3_2 = Rotation_2.log();
-    cout<<"le_so3 from matrix is: "<<so3_1.transpose()<<endl;
-    cout<<"le_so3 from quternion is: "<<so3_2.transpose()<<endl;
+    cout<<"Lie Algebra so3 from matrix is: "<<so3_1.transpose()<<endl;
+    cout<<"Lie Algebra so3 from quternion is: "<<so3_2.transpose()<<endl;
 
     // 增量扰动模型的更新SO3
     Eigen::Vector3d update_so3(1e-3, 0, 0);                              // 更新量
