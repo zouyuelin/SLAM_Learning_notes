@@ -1,4 +1,4 @@
-﻿cmake_minimum_required( VERSION 2.8 )
+cmake_minimum_required( VERSION 2.8 )
 project( g2o_fitting )
 
 set( CMAKE_BUILD_TYPE "Release" )
@@ -29,6 +29,8 @@ find_package( Pangolin REQUIRED)
 find_package( Sophus REQUIRED)
 #boost
 find_package( Boost REQUIRED)
+#Cholmod
+find_package( Cholmod REQUIRED)
 
 INCLUDE_DIRECTORIES(
                 ${PROJECT_SOURCE_DIR}
@@ -37,7 +39,8 @@ INCLUDE_DIRECTORIES(
                 ${PCL_INCLUDE_DIRS}
                 ${BOOST_INCLUDE_DIRS}
                 ${EIGEN3_INCLUDE_DIRS}
-                ${Sophus_INCLUDE_DIRS})
+                ${Sophus_INCLUDE_DIRS}
+                ${CHOLMOD_INCLUDE_DIR})
 
 
 add_executable(g2o_fitting  g2o_fitting.cpp)
@@ -51,6 +54,7 @@ TARGET_LINK_LIBRARIES(g2o_fitting
          ${Boost_LIBRARIES}
          ${Sophus_LIBRARIES}
          ${PCL_LIBRARIES}
+         ${CHOLMOD_LIBRARIES}
          Qt5::Core Qt5::Widgets Qt5::Gui Qt5::Network
          g2o_core g2o_csparse_extension g2o_types_sim3 g2o_stuff g2o_types_sba
          )
@@ -62,6 +66,7 @@ TARGET_LINK_LIBRARIES(curve_lambda
         ${Boost_LIBRARIES}
         ${Sophus_LIBRARIES}
         ${PCL_LIBRARIES}
+        ${CHOLMOD_LIBRARIES}
         Qt5::Core Qt5::Widgets Qt5::Gui Qt5::Network
         g2o_core g2o_csparse_extension g2o_types_sim3 g2o_stuff g2o_types_sba)
 
