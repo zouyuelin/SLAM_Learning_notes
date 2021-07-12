@@ -50,10 +50,17 @@ Point2d pixel2cam(const Point2d &p, const Mat &K)
     );
 }
 
-int main()
+int main(int argc,char**argv)
 {
-    Mat img_1 = imread("../1.png");
-    Mat img_2 = imread("../2.png");
+    std::string path1 = argv[1];
+    std::string path2 = argv[2];
+    if(argc !=3)
+    {
+        cout<<"输入参数方法：**/testOptimizerG2o ./1.png ./2.png\n";
+        return 0;
+    }
+    Mat img_1 = imread(path1);
+    Mat img_2 = imread(path2);
 
     vector<KeyPoint> keypoints_1, keypoints_2;
     vector<Point2f> points_1,points_2;
