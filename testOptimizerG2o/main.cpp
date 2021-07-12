@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <g2o/core/base_vertex.h>
 #include <g2o/core/base_unary_edge.h>
 #include <g2o/core/sparse_optimizer.h>
@@ -69,7 +69,6 @@ int main()
     chrono::duration<double> delay_time = chrono::duration_cast<chrono::duration<double>>(t2 - t1); //milliseconds 毫秒
 
     cout<<"匹配耗时:"<<delay_time.count()<<"秒"<<endl;
-    cout << "一共找到了" << matches.size() << "组匹配点" << endl;
 
 
     for(auto m:matches)
@@ -78,6 +77,7 @@ int main()
         points_2.push_back(keypoints_2[m.trainIdx].pt);
     }
 
+    cout<<"特征点的数量："<<points_1.size()<<"  "<<points_2.size()<<endl;
 
     //BA优化
     BASolver(points_1,points_2,K);
@@ -123,6 +123,10 @@ void find_feature_matches_GPU(const Mat &img_1, const Mat &img_2,
   descriptors_2.convertTo(descriptors_2_32F,CV_32F);
 
   //-- 第二步:对两幅图像中的BRIEF描述子进行匹配，使用 Hamming 距离
+
+  //*******************************************利用Match方法进行匹配************************************/
+  //可取消注释选择此方法
+  /*
   vector<DMatch> match;
   Ptr<cuda::DescriptorMatcher> matcher = cuda::DescriptorMatcher::createBFMatcher(NORM_L2);
   // BFMatcher matcher ( NORM_HAMMING );
@@ -149,6 +153,26 @@ void find_feature_matches_GPU(const Mat &img_1, const Mat &img_2,
       matches.push_back(match[i]);
     }
   }
+  */
+
+
+
+  //*******************************************利用KnnMatch方法进行匹配（效果较好）**************************/
+  vector< vector<DMatch>> knnmatch;
+  Ptr<cuda::DescriptorMatcher> matcher = cuda::DescriptorMatcher::createBFMatcher(NORM_L2);
+  // BFMatcher matcher ( NORM_HAMMING );
+  matcher->knnMatch(descriptors_1_32F, descriptors_2_32F, knnmatch,2);
+
+  //-- 第三步:匹配点对筛选
+
+    for (int i = 0; i < knnmatch.size(); i++)
+    {
+        if (knnmatch[i][0].distance <= 0.8*knnmatch[i][1].distance)
+        {
+            matches.push_back(knnmatch[i][0]);
+        }
+    }
+
 
 }
 
@@ -276,9 +300,12 @@ void BASolver(vector<Point2f> &points_1,vector<Point2f> &points_2,Mat &K)
     optimizer.optimize(20);
 
     //变换矩阵
-    g2o::VertexSE3Expmap * v = dynamic_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(1)) ;
-    Eigen::Isometry3d pose = v->estimate();
-    cout<<"The Pose=\n"<<pose.matrix()<<endl;
+    g2o::VertexSE3Expmap * v1 = dynamic_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(0)) ;
+    g2o::VertexSE3Expmap * v2 = dynamic_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(1)) ;
+    Eigen::Isometry3d pose1 = v1->estimate();
+    Eigen::Isometry3d pose2 = v2->estimate();
+    cout<<"The Pose1 from fram 1=\n"<<pose1.matrix()<<endl;
+    cout<<"The Pose2 from fram 2(or the frame1 to frame2)=\n"<<pose2.matrix()<<endl;
 
     //****************************BA优化过程*********************
 }
