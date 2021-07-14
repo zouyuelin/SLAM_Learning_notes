@@ -33,9 +33,10 @@ add_executable(testOptimizerG2o main.cpp)
 TARGET_LINK_LIBRARIES(testOptimizerG2o
          ${OpenCV_LIBS}
          ${Sophus_LIBRARIES}
+         ${CHOLMOD_LIBRARIES}
          g2o_core g2o_csparse_extension g2o_types_sim3 g2o_stuff g2o_types_sba
          )
 
  message(STATUS "OPENCV is :${OpenCV_INCLUDE_DIRS}")
  message(STATUS "OPENCV version is :${OpenCV_VERSION}")
- message(STATUS "the cholmod is ${CHOLMOD_INCLUDE_DIR}")
+ message(STATUS "the cholmod is : ${CHOLMOD_INCLUDE_DIR} ${CHOLMOD_LIBRARIES}")
