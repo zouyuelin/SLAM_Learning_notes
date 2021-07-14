@@ -239,7 +239,8 @@ void BASolver(vector<Point2f> &points_1,vector<Point2f> &points_2,Mat &K)
     //构造求解器
     g2o::SparseOptimizer optimizer;
     //线性方程求解器
-    g2o::BlockSolver_6_3::LinearSolverType* linearSolver = new g2o::LinearSolverDense<g2o::BlockSolver_6_3::PoseMatrixType>();
+    //g2o::BlockSolver_6_3::LinearSolverType* linearSolver = new g2o::LinearSolverDense<g2o::BlockSolver_6_3::PoseMatrixType>();
+    g2o::BlockSolver_6_3::LinearSolverType* linearSolver = new g2o::LinearSolverCholmod<g2o::BlockSolver_6_3::PoseMatrixType>();
     //矩阵块求解器
     g2o::BlockSolver_6_3* block_solver = new g2o::BlockSolver_6_3(linearSolver);
     //L-M优化算法
