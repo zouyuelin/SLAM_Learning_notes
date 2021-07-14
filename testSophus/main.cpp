@@ -46,8 +46,8 @@ int main()
     // 利用对数映射获得它的李代数，使用log函数
     Eigen::Vector3d so3_1 = Rotation_1.log();
     Eigen::Vector3d so3_2 = Rotation_2.log();
-    cout<<"Lie Algebra so3 from matrix is: "<<so3_1.transpose()<<endl;
-    cout<<"Lie Algebra so3 from quternion is: "<<so3_2.transpose()<<endl;
+    cout<<"le_so3 from matrix is: "<<so3_1.transpose()<<endl;
+    cout<<"le_so3 from quternion is: "<<so3_2.transpose()<<endl;
 
     // 增量扰动模型的更新SO3
     Eigen::Vector3d update_so3(1e-3, 0, 0);                              // 更新量
@@ -67,7 +67,9 @@ int main()
     //se3李代数是六维的向量：(t=Jp)(R = exp(SE3x))
     typedef Eigen::Matrix<double,6,1> Vector6d;
     Vector6d se3 = SE3_Rt.log();
-    cout<<"se3 = "<<se3.transpose()<<endl;
+    Eigen::Matrix4d Tcw = Sophus::SE3::exp(se3).matrix();
+    cout<<"se3 = \n"<<se3.transpose()<<endl;
+    cout<<"SE3 = \n"<<Tcw<<endl;
 
     // hat:表示反对称的se3，vee：与hat相反
     cout<<"se3 hat = "<<endl<<Sophus::SE3::hat(se3)<<endl;
@@ -81,4 +83,3 @@ int main()
 
     return 0;
 }
-
