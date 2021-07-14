@@ -34,7 +34,7 @@ TARGET_LINK_LIBRARIES(testOptimizerG2o
          ${OpenCV_LIBS}
          ${Sophus_LIBRARIES}
          ${CHOLMOD_LIBRARIES}
-         g2o_core g2o_csparse_extension g2o_types_sim3 g2o_stuff g2o_types_sba
+         g2o_core g2o_types_slam3d g2o_solver_csparse g2o_stuff g2o_csparse_extension g2o_types_sim3 g2o_types_sba
          )
 
  message(STATUS "OPENCV is :${OpenCV_INCLUDE_DIRS}")
