@@ -50,6 +50,23 @@ int main()
     double delay = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count(); //milliseconds 毫秒
     cout<<"耗时:"<<delay<<"微秒"<<endl;
 
+    //**********奇异值分解************
+    Eigen::Matrix<double,3,3> J;
+    J<< 1,0,1,
+        0,1,1,
+        0,0,0;
+    Eigen::JacobiSVD<Eigen::MatrixXd> svd(J, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    auto U = svd.matrixU();
+    auto V = svd.matrixV();
+    auto A = svd.singularValues();
+    cout<<"A = \n"<<A<<endl;
+    cout<<"U = \n"<<U<<endl;
+    cout<<"VT = \n"<<V.transpose()<<endl;
+
+    auto J_souce = U*A.asDiagonal()*V.transpose();
+    cout<<"J constructed by U*A*VT is \n"<<J_souce<<endl;
+
+
     //*****************************************机器人学中的运算**************************
 
     //eigen表示：
@@ -82,6 +99,7 @@ int main()
     Tw2.pretranslate(t_2);
 
     Eigen::Isometry3d Tw3 = Tw2*Tw1;
+    cout<<"Tw2 = \n"<<Tw2.matrix()<<endl;
 
     //坐标变换
     Eigen::Vector3d p_2 = Tw1 * p_1;
