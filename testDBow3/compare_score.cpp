@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <DBoW3/DBoW3.h>
 #include <opencv2/core.hpp>
 #include <opencv2/features2d.hpp>
@@ -14,6 +14,14 @@ void findDescriptors(vector<cv::Mat> &images,vector<cv::Mat> &descriptors);
 
 int main(int argc, char** argv)
 {
+
+    //加载图片进行匹配测试
+    if(argc !=2)
+    {
+        cout<<"use: ./build/compare_score data\n";
+        return -1;
+    }
+
     //加载词典
     cout<<"loading the vocabulary......\n"<<endl;
     chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
@@ -25,12 +33,7 @@ int main(int argc, char** argv)
     cout<<"加载耗时:"<<delay_time.count()<<"秒"<<endl;
     cout<<vocab<<endl;
 
-    //加载图片进行匹配测试
-    if(argc !=2)
-    {
-        cout<<"use: ./build/creatDBow3vocabulary data\n";
-        return -1;
-    }
+
     //读取 文件夹下的图片
     string path = argv[1];
     ifstream readImages("filelist.txt");
