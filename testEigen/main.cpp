@@ -68,7 +68,7 @@ int main()
 
 
     //*****************************************机器人学中的运算**************************
-
+    //---------------------------坐标变化---------------------
     //eigen表示：
     //旋转矩阵（3X3）:Eigen::Matrix3d
     //旋转向量（3X1）:Eigen::AngleAxisd
@@ -109,6 +109,29 @@ int main()
     cout<<"The position p2 is:\n"<<p_2.transpose()<<endl;
     cout<<"The position p3 is:\n"<<p_3.transpose()<<endl;
     cout<<"The position p3_ is:\n"<<p_3_.transpose()<<endl;
+
+    //---------------------------旋转变换---------------------
+    // 初始化旋转向量，绕z轴旋转45°，y轴60°，x轴30°；
+    Eigen::AngleAxisd R_z(M_PI/4, Eigen::Vector3d(0,0,1));
+    Eigen::AngleAxisd R_y(M_PI/3, Eigen::Vector3d(0,1,0));
+    Eigen::AngleAxisd R_x(M_PI/6, Eigen::Vector3d(1,0,0));
+    // 转换为旋转矩阵
+    Eigen::Matrix3d R_matrix  = R_z.toRotationMatrix()*R_y.toRotationMatrix()*R_x.toRotationMatrix();
+    cout<<"The matrix from Eigen::AngleAxisd is :\n"<<R_matrix<<endl<<endl;
+
+    // 旋转向量转换为四元数 [x y z w],但构造时输入Quaterniond顺序为 w x y z;
+    Eigen::Quaterniond q(R_matrix);
+    cout<<"The quternian is [x y z w]:\n"<<q.coeffs().transpose()<<endl<<endl;
+
+    Eigen::AngleAxisd tf(R_matrix);
+    cout<<"Rotation matrix is :\n"<<tf.matrix()<<endl;
+    cout<<"Angle is z x y:\n"<<tf.matrix().eulerAngles(2,1,0)<<endl; //tf.matrix().eulerAngles(2,1,0)
+
+    //设为单位矩阵
+    R_matrix.setIdentity(3,3);
+    Eigen::AngleAxisd tf_E(R_matrix);
+    cout<<"Rotation matrix is :\n"<<R_matrix<<endl;
+    cout<<"Angle is z x y:\n"<<tf_E.matrix().eulerAngles(2,1,0)<<endl; //tf.matrix().eulerAngles(2,1,0)
 
     return 0;
 }
