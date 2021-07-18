@@ -121,7 +121,7 @@ int main(int argc,char**argv)
     solvePnPWithG2o(pts_3d_eigen,pts_2d_eigen,K,pose);
     t2 = chrono::steady_clock::now();
     delay_time = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
-    cout << "solve pnp by using g2o time_cost: " << delay_time.count() << " seconds." << endl;
+    cout << "solve pnp by using g2o(EdgeSE3ProjectXYZOnlyPose) time_cost: " << delay_time.count() << " seconds." << endl;
     cout << "pose estimated by g2o(EdgeSE3ProjectXYZOnlyPose) =\n" << pose.matrix() << endl;
 
     //*******************************G2o优化--->EdgeProjectXYZ2UV*******************************/
@@ -129,7 +129,7 @@ int main(int argc,char**argv)
     BASolver(pts_3d_eigen,pts_2d_eigen,K,pose);
     t2 = chrono::steady_clock::now();
     delay_time = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
-    cout << "solve pnp by using g2o time_cost: " << delay_time.count() << " seconds." << endl;
+    cout << "solve pnp by using g2o(EdgeProjectXYZ2UV) time_cost: " << delay_time.count() << " seconds." << endl;
     cout << "pose estimated by g2o(EdgeProjectXYZ2UV) =\n" << pose.matrix() << endl;
 
     //********************************opencv优化***************************/
