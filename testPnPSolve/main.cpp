@@ -1,4 +1,4 @@
-﻿
+
 
 /*
  * 本程序不对特征点的位置优化，只考虑优化相机的位姿
@@ -64,6 +64,9 @@ Point2d pixel2cam(const Point2d &p, const Mat &K)
 void solvePnPWithG2o(vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> &pts_3d_eigen,vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> pts_2d_eigen,
               Mat &K,Sophus::SE3 &pose);
 
+void BASolver(vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> &pts_3d_eigen,vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> pts_2d_eigen,
+              Mat &K,Sophus::SE3 &pose);
+
 
 int main(int argc,char**argv)
 {
@@ -112,15 +115,22 @@ int main(int argc,char**argv)
     cout<<"特征点的数量："<<pts_3d_eigen.size()<<"  "<<pts_2d_eigen.size()<<endl;
 
 
-    //*******************************G2o优化*******************************/
+    //*******************************G2o优化--->EdgeSE3ProjectXYZOnlyPose*******************************/
     t1 = chrono::steady_clock::now();
     Sophus::SE3 pose;
     solvePnPWithG2o(pts_3d_eigen,pts_2d_eigen,K,pose);
     t2 = chrono::steady_clock::now();
     delay_time = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
     cout << "solve pnp by using g2o time_cost: " << delay_time.count() << " seconds." << endl;
-    cout << "pose estimated by g2o =\n" << pose.matrix() << endl;
+    cout << "pose estimated by g2o(EdgeSE3ProjectXYZOnlyPose) =\n" << pose.matrix() << endl;
 
+    //*******************************G2o优化--->EdgeProjectXYZ2UV*******************************/
+    t1 = chrono::steady_clock::now();
+    BASolver(pts_3d_eigen,pts_2d_eigen,K,pose);
+    t2 = chrono::steady_clock::now();
+    delay_time = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
+    cout << "solve pnp by using g2o time_cost: " << delay_time.count() << " seconds." << endl;
+    cout << "pose estimated by g2o(EdgeProjectXYZ2UV) =\n" << pose.matrix() << endl;
 
     //********************************opencv优化***************************/
     t1 = chrono::steady_clock::now();
@@ -244,4 +254,69 @@ void solvePnPWithG2o(vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vec
     optimizer.optimize(30);
 
     pose = Sophus::SE3(vSE3->estimate().rotation(),vSE3->estimate().translation());
+}
+
+void BASolver(vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> &pts_3d_eigen,vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> pts_2d_eigen,
+              Mat &K,Sophus::SE3 &pose)
+{
+    //****************************BA优化过程*********************
+    //构造求解器
+    g2o::SparseOptimizer optimizer;
+    //线性方程求解器
+    //g2o::BlockSolver_6_3::LinearSolverType* linearSolver = new g2o::LinearSolverDense<g2o::BlockSolver_6_3::PoseMatrixType>();
+    g2o::BlockSolver_6_3::LinearSolverType* linearSolver = new g2o::LinearSolverCholmod<g2o::BlockSolver_6_3::PoseMatrixType>();
+    //矩阵块求解器
+    g2o::BlockSolver_6_3* block_solver = new g2o::BlockSolver_6_3(linearSolver);
+    //L-M优化算法
+    g2o::OptimizationAlgorithmLevenberg* algorithm = new g2o::OptimizationAlgorithmLevenberg(block_solver);
+    //
+    optimizer.setAlgorithm(algorithm);
+    optimizer.setVerbose(true);
+
+
+    //添加位姿顶点
+
+    g2o::VertexSE3Expmap* v = new g2o::VertexSE3Expmap;
+    v->setId(0);
+    v->setFixed(false);
+    v->setEstimate(g2o::SE3Quat());
+    optimizer.addVertex(v);
+
+    //添加特征点顶点
+    for(int i=1;i<pts_3d_eigen.size();i++)
+    {
+        g2o::VertexSBAPointXYZ* v = new g2o::VertexSBAPointXYZ();
+        v->setId(i); //已经添加过两个位姿的顶点了
+        v->setEstimate(pts_3d_eigen[i]);
+        v->setFixed(true); //固定，不优化
+        v->setMarginalized(true);//把矩阵块分成两个部分，分别求解微量
+        optimizer.addVertex(v);
+    }
+
+    //添加相机参数
+    g2o::CameraParameters* camera = new g2o::CameraParameters(K.at<double>(0, 0),Eigen::Vector2d(K.at<double>(0, 2),K.at<double>(1, 2)),0);
+    camera->setId(0);
+    optimizer.addParameter(camera);
+
+    //添加边,第一帧和第二帧
+    for(size_t i = 1;i<pts_3d_eigen.size();i++)
+    {
+
+        g2o::EdgeProjectXYZ2UV* edge = new g2o::EdgeProjectXYZ2UV();
+        edge->setVertex(0,dynamic_cast<g2o::VertexSBAPointXYZ*> (optimizer.vertex(i)));
+        edge->setVertex(1,v);
+        edge->setMeasurement(pts_2d_eigen[i]);
+        edge->setRobustKernel(new g2o::RobustKernelHuber());
+        edge->setInformation(Eigen::Matrix2d::Identity());
+        edge->setParameterId(0,0);//这句必要
+        optimizer.addEdge(edge);
+    }
+
+    optimizer.setVerbose(false);
+    optimizer.initializeOptimization();
+    optimizer.optimize(30);
+
+    pose = Sophus::SE3(v->estimate().rotation(),v->estimate().translation());
+
+    //****************************BA优化过程*********************
 }
