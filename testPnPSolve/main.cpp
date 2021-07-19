@@ -135,7 +135,7 @@ int main(int argc,char**argv)
     //********************************opencv优化***************************/
     t1 = chrono::steady_clock::now();
     Mat r, t, R;
-    cv::solvePnP(points_1_3d, points_2, K, Mat(), r, t, false);     // 调用OpenCV 的 PnP 求解，可选择EPNP，DLS等方法
+    cv::solvePnPRansac(points_1_3d, points_2, K, Mat(), r, t, false);     // 调用OpenCV 的 PnPRansac 求解，可选择EPNP，DLS等方法
     cv::Rodrigues(r, R);                                            // r为旋转向量形式，用Rodrigues公式转换为矩阵
     t2 = chrono::steady_clock::now();
     delay_time = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
