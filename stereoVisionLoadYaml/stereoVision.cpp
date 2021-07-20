@@ -218,6 +218,7 @@ void computeSGBM(Mat &left,Mat &right,Mat &disparity)
     sgbm->setSpeckleRange(32);
     sgbm->setUniquenessRatio(3);
     sgbm->setDisp12MaxDiff(1);     //左右视差
+    sgbm->setMode(cv::StereoSGBM::MODE_HH);
 
     cv::Mat disparity_sgbm;
     sgbm->compute(left, right, disparity_sgbm);
