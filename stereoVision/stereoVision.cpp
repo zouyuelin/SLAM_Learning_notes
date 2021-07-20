@@ -1,5 +1,6 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/cudastereo.hpp>
+#include <opencv2/calib3d.hpp>
 #include <vector>
 #include <string>
 #include <Eigen/Core>
@@ -25,6 +26,7 @@ int main(int argc, char **argv) {
     string right_file = argv[2];
     // 内参
     double fx = 718.856, fy = 718.856, cx = 607.1928, cy = 185.2157;
+    //double fx = 399.23, fy = 396.99, cx = 301.175, cy = 306.12;
     // 基线
     double b = 0.573;
 
@@ -35,16 +37,29 @@ int main(int argc, char **argv) {
     left_g.upload(left);
     right_g.upload(right);
 
-    cv::Ptr<cv::cuda::StereoBM> sgbm = cv::cuda::createStereoBM();
 
     //------use cpu to compute------
-    //cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create(
-        //0, 96, 9, 8 * 9 * 9, 32 * 9 * 9, 1, 63, 10, 100, 32);    // 神奇的参数
-    //cv::Mat disparity_sgbm, disparity;
-    //sgbm->compute(left_g, right_g, disparity_sgbm);
-    //disparity_sgbm.convertTo(disparity, CV_32F, 1.0 / 16.0f);
+    /*cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create(
+        0, 96, 9, 8 * 9 * 9, 32 * 9 * 9, 1, 63, 10, 100, 32);    // 神奇的参数
+    cv::Mat disparity_sgbm, disparity;
+    sgbm->compute(left, right, disparity_sgbm);
+    disparity_sgbm.convertTo(disparity, CV_32F, 1.0 / 16.0f);*/
+
 
     //------use GPU to compute------
+    cv::Ptr<cv::cuda::StereoBM> sgbm = cv::cuda::createStereoBM();
+    //sgbm->setPreFilterSize(9);
+    //sgbm->setPreFilterCap(31);
+    //sgbm->setMinDisparity(-16);
+    //sgbm->setSpeckleRange(32);      //视差变化阈值，大于阈值窗口视差清零
+    //影响较大的参数
+    sgbm->setBlockSize(7);           //BlockSize 取值必须是奇数(3 5 7 9)
+    sgbm->setSpeckleWindowSize(100);
+    sgbm->setNumDisparities(128);    //NumDisparities 越大视差量数越大,必须是16的整数
+    sgbm->setTextureThreshold(3);   //TextureThreshold 越小平滑度越高，纹理阈值。
+    sgbm->setUniquenessRatio(5);
+
+
     cv::cuda::GpuMat disparity_sgbm_g, disparity_g;
     sgbm->compute(left_g, right_g, disparity_sgbm_g);
     disparity_sgbm_g.convertTo(disparity_g, CV_32F, 1.0 / 16.0f);
