@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
     //------use cpu to compute------
     /*cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create(
         0, 96, 9, 8 * 9 * 9, 32 * 9 * 9, 1, 63, 10, 100, 32);    // 神奇的参数
+    sgbm->setMode(cv::StereoSGBM::MODE_HH);
     cv::Mat disparity_sgbm, disparity;
     sgbm->compute(left, right, disparity_sgbm);
     disparity_sgbm.convertTo(disparity, CV_32F, 1.0 / 16.0f);*/
