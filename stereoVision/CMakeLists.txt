@@ -1,5 +1,7 @@
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+project(stereoVision)
+
 
 set(CMAKE_CXX_COMPILER "clang++")
 
