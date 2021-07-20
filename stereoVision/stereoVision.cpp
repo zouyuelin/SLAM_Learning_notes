@@ -1,4 +1,5 @@
 #include <opencv2/opencv.hpp>
+#include <opencv2/cudastereo.hpp>
 #include <vector>
 #include <string>
 #include <Eigen/Core>
@@ -8,16 +9,20 @@
 using namespace std;
 using namespace Eigen;
 
-// 文件路径
-string left_file = "./left.png";
-string right_file = "./right.png";
-
 // 在pangolin中画图，已写好，无需调整
 void showPointCloud(
     const vector<Vector4d, Eigen::aligned_allocator<Vector4d>> &pointcloud);
 
 int main(int argc, char **argv) {
 
+    if(argc <3)
+    {
+        cout<<"输入参数方法：**exe left.png right.png\n";
+        return 0;
+    }
+
+    string left_file = argv[1];
+    string right_file = argv[2];
     // 内参
     double fx = 718.856, fy = 718.856, cx = 607.1928, cy = 185.2157;
     // 基线
@@ -26,12 +31,26 @@ int main(int argc, char **argv) {
     // 读取图像
     cv::Mat left = cv::imread(left_file, 0);
     cv::Mat right = cv::imread(right_file, 0);
-    cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create(
-        0, 96, 9, 8 * 9 * 9, 32 * 9 * 9, 1, 63, 10, 100, 32);    // 神奇的参数
-    cv::Mat disparity_sgbm, disparity;
-    sgbm->compute(left, right, disparity_sgbm);
-    disparity_sgbm.convertTo(disparity, CV_32F, 1.0 / 16.0f);
+    cv::cuda::GpuMat left_g,right_g;
+    left_g.upload(left);
+    right_g.upload(right);
 
+    cv::Ptr<cv::cuda::StereoBM> sgbm = cv::cuda::createStereoBM();
+
+    //------use cpu to compute------
+    //cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create(
+        //0, 96, 9, 8 * 9 * 9, 32 * 9 * 9, 1, 63, 10, 100, 32);    // 神奇的参数
+    //cv::Mat disparity_sgbm, disparity;
+    //sgbm->compute(left_g, right_g, disparity_sgbm);
+    //disparity_sgbm.convertTo(disparity, CV_32F, 1.0 / 16.0f);
+
+    //------use GPU to compute------
+    cv::cuda::GpuMat disparity_sgbm_g, disparity_g;
+    sgbm->compute(left_g, right_g, disparity_sgbm_g);
+    disparity_sgbm_g.convertTo(disparity_g, CV_32F, 1.0 / 16.0f);
+
+    cv::Mat disparity;
+    disparity_g.download(disparity);
     // 生成点云
     vector<Vector4d, Eigen::aligned_allocator<Vector4d>> pointcloud;
 
@@ -53,7 +72,9 @@ int main(int argc, char **argv) {
             pointcloud.push_back(point);
         }
 
-    cv::imshow("disparity", disparity / 96.0);
+    //cv::imshow("disparity", disparity /96);//cpu
+
+    cv::imshow("disparity", disparity /8);
     cv::waitKey(0);
     // 画出点云
     showPointCloud(pointcloud);
