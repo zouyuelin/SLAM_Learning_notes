@@ -104,7 +104,7 @@ int main(int argc,char**argv)
     fs << "Camera.fx:  " << cameraMatrix.at<double>(0,0)<<endl;
     fs << "Camera.fy:  " << cameraMatrix.at<double>(1,1)<<endl;
     fs << "Camera.cx:  " << cameraMatrix.at<double>(0,2)<<endl;
-    fs << "Camera.cx:  " << cameraMatrix.at<double>(1,2)<<endl<<endl;
+    fs << "Camera.cy:  " << cameraMatrix.at<double>(1,2)<<endl<<endl;
 
     fs << "# ------camera Distortion--------"<<endl;
     fs << "Camera.k1:  " << distCoeffs.at<double>(0,0)<<endl;
