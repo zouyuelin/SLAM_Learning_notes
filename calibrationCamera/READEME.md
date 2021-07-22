@@ -4,7 +4,7 @@
 # 标定
 编译以后使用方法：
 ```shell
-./calibrationCamera [imagepath] [width-1] [height-1]\n
+./calibrationCamera [imagepath] [width-1] [height-1]
 ```
 width就是棋盘格子列数；height就是棋盘格式行数；
 比如10*10的棋盘；输入
