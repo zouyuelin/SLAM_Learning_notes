@@ -14,8 +14,10 @@ Publications:
 
 # 构建方法
 复制到 ~/catkin_ws/src/
+```shell
 cd ~/catkin_ws
 cakin_make
+```
 
 # 运行
 source ~/catkin_ws/devel/setup.bash
