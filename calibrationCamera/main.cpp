@@ -15,6 +15,7 @@ int main(int argc,char**argv)
     if(argc<4)
     {
         cout<<"./calibrationCamera [imagepath] [width-1] [height-1]\n";
+        return -1;
     }
     vector<string> files;
     glob(argv[1],files);
@@ -26,7 +27,7 @@ int main(int argc,char**argv)
     std::vector<std::vector<cv::Point2f>> imagePoints;
 
     Mat cameraMatrix;  //Camera intrinsic Matrix
-    Mat distCoeffs;    //five parameters of distCoeffs£¬(k1,k2,p1,p2[,k3[,k4,k5,k6]])
+    Mat distCoeffs;    //five parameters of distCoeffsï¼Œ(k1,k2,p1,p2[,k3[,k4,k5,k6]])
 
     std::vector<cv::Mat> rvecs, tvecs;
     cv::Size imageSize;
@@ -83,12 +84,12 @@ int main(int argc,char**argv)
 
     cout<<imageSize<<endl;
 
-    calibrateCamera(objectPoints, // ÈýÎ¬µã
-                    imagePoints, // Í¼Ïñµã
-                    imageSize, // Í¼Ïñ³ß´ç
-                    cameraMatrix, // Êä³öÏà»ú¾ØÕó
-                    distCoeffs, // Êä³ö»û±ä¾ØÕó
-                    rvecs, tvecs // Rs¡¢Ts£¨Íâ²Î£©
+    calibrateCamera(objectPoints, // ä¸‰ç»´ç‚¹
+                    imagePoints, // å›¾åƒç‚¹
+                    imageSize, // å›¾åƒå°ºå¯¸
+                    cameraMatrix, // è¾“å‡ºç›¸æœºçŸ©é˜µ
+                    distCoeffs, // è¾“å‡ºç•¸å˜çŸ©é˜µ
+                    rvecs, tvecs // Rsã€Tsï¼ˆå¤–å‚ï¼‰
                     );
 
     cout<<"K = \n"<<cameraMatrix<<endl;
