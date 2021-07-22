@@ -12,4 +12,4 @@ cakin_make
 
 # 运行
 source ~/catkin_ws/devel/setup.bash
-rosrun camera camera_stereo_node
+rosrun camera camera_stereo_node 0
