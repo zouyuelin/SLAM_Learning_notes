@@ -12,11 +12,17 @@ using namespace cv;
 
 int main(int argc,char**argv)
 {
+    float squareSize = 1.0;    //the length or height of the per broad, unit[mm]
     if(argc<4)
     {
-        cout<<"./calibrationCamera [imagepath] [width-1] [height-1]\n";
+        cout<<"./calibrationCamera [imagepath] [width-1] [height-1] [squareSize = 1.0]\n";
+        cout<<"输入 [图像路径] [棋盘宽格数-1] [棋盘横格数-1] [每个格子的边长/mm{如果不知道格子长度可以不用输入，默认1.0}]\n";
         return -1;
     }
+
+    if(argc==5)
+        squareSize = atof(argv[4]);
+
     vector<string> files;
     glob(argv[1],files);
 
@@ -40,7 +46,7 @@ int main(int argc,char**argv)
     {
        for (int j = 0; j < boardSize.width; j++)
        {
-          objectCorners.push_back(cv::Point3f(i, j, 0.0f));
+          objectCorners.push_back(cv::Point3f(i*squareSize, j*squareSize, 0.0f));
        }
     }
 
@@ -92,11 +98,13 @@ int main(int argc,char**argv)
                     rvecs, tvecs // Rs、Ts（外参）
                     );
 
+    cout<<"camera Matrix 3D to 2D is  = \n" << initCameraMatrix2D(objectPoints,imagePoints,imageSize,0)<<endl<<endl;
+
     cout<<"K = \n"<<cameraMatrix<<endl;
-    cout<<"distCoeffs = \n"<<distCoeffs<<endl;
+    cout<<"distCoeffs = \n"<<distCoeffs<<endl<<endl;
 
     //clear the old .yaml file
-    String path = string(argv[1])+"/calib.yaml";
+    string path = string(argv[1])+"/calib.yaml";
     ofstream fs(path);
     fs.clear();
 
@@ -113,7 +121,43 @@ int main(int argc,char**argv)
     fs << "Camera.p2:  " << distCoeffs.at<double>(0,3)<<endl;
     fs << "Camera.k3:  " << distCoeffs.at<double>(0,4)<<endl<<endl;
 
+
+    Mat newCameraMatrix = getOptimalNewCameraMatrix(cameraMatrix,distCoeffs,imageSize,0);//you can use 0 to test the images
+
+    cout<<"after undistort newCameraMatrix = \n"<<newCameraMatrix<<endl<<endl;
+
+    for(size_t i=0;i<files.size();i++)
+    {
+        Mat outputfile;
+        Mat src = imread(files[i]);
+        if(src.empty())
+            continue;
+        cv::undistort(src,outputfile,cameraMatrix,distCoeffs,newCameraMatrix);
+
+        Mat srcAnddst(src.rows,src.cols + outputfile.cols,src.type());
+        Mat submat =srcAnddst.colRange(0,src.cols);
+           src.copyTo(submat);
+           submat = srcAnddst.colRange(src.cols,outputfile.cols*2);
+           outputfile.copyTo(submat);
+
+        imshow("sources and undistort",srcAnddst);
+        waitKey(300);
+    }
+
+    cv::destroyAllWindows();
+
+    fs <<endl;
+
+    fs << "# ------after undistort --new camera matrix--------"<<endl;
+    fs << "# if you want use the camera matrix on slam, unditort the image or ORB points,then use the new camera matrix "<<endl;
+    fs << "NewCamera.fx:  " << newCameraMatrix.at<double>(0,0)<<endl;
+    fs << "NewCamera.fy:  " << newCameraMatrix.at<double>(1,1)<<endl;
+    fs << "NewCamera.cx:  " << newCameraMatrix.at<double>(0,2)<<endl;
+    fs << "NewCamera.cy:  " << newCameraMatrix.at<double>(1,2)<<endl<<endl;
+
     fs.close();
+    std::string commad("gedit "+path);
+    system(commad.c_str());
 
     cout<<"The last config yaml file is : "<<path<<endl;
 
