@@ -98,8 +98,6 @@ int main(int argc,char**argv)
                     rvecs, tvecs // Rs、Ts（外参）
                     );
 
-    cout<<"camera Matrix 3D to 2D is  = \n" << initCameraMatrix2D(objectPoints,imagePoints,imageSize,0)<<endl<<endl;
-
     cout<<"K = \n"<<cameraMatrix<<endl;
     cout<<"distCoeffs = \n"<<distCoeffs<<endl<<endl;
 
@@ -121,10 +119,20 @@ int main(int argc,char**argv)
     fs << "Camera.p2:  " << distCoeffs.at<double>(0,3)<<endl;
     fs << "Camera.k3:  " << distCoeffs.at<double>(0,4)<<endl<<endl;
 
+    fs.close();
 
-    Mat newCameraMatrix = getOptimalNewCameraMatrix(cameraMatrix,distCoeffs,imageSize,0);//you can use 0 to test the images
+    cv::FileStorage f(path,cv::FileStorage::APPEND);
+    f.writeComment(" \n------camera Intrinsic saved by yaml data--------",true);
+    f<<"camera Matrix K"<<cameraMatrix;
+    f.writeComment(" \n------camera Distortion saved by yaml data--------",true);
+    f<<"camera Distortion"<<distCoeffs;
 
-    cout<<"after undistort newCameraMatrix = \n"<<newCameraMatrix<<endl<<endl;
+    f.release();
+
+
+    //Mat newCameraMatrix = getOptimalNewCameraMatrix(cameraMatrix,distCoeffs,imageSize,0);//you can use 0 to test the images
+
+    //cout<<"after undistort newCameraMatrix = \n"<<newCameraMatrix<<endl<<endl;
 
     for(size_t i=0;i<files.size();i++)
     {
@@ -132,7 +140,10 @@ int main(int argc,char**argv)
         Mat src = imread(files[i]);
         if(src.empty())
             continue;
-        cv::undistort(src,outputfile,cameraMatrix,distCoeffs,newCameraMatrix);
+        cv::undistort(src,outputfile,cameraMatrix,distCoeffs,cameraMatrix);
+
+        //save undistort image
+        //imwrite("../image_/"+to_string(i)+".jpg",outputfile);
 
         Mat srcAnddst(src.rows,src.cols + outputfile.cols,src.type());
         Mat submat =srcAnddst.colRange(0,src.cols);
@@ -146,16 +157,8 @@ int main(int argc,char**argv)
 
     cv::destroyAllWindows();
 
-    fs <<endl;
 
-    fs << "# ------after undistort --new camera matrix--------"<<endl;
-    fs << "# if you want use the camera matrix on slam, unditort the image or ORB points,then use the new camera matrix "<<endl;
-    fs << "NewCamera.fx:  " << newCameraMatrix.at<double>(0,0)<<endl;
-    fs << "NewCamera.fy:  " << newCameraMatrix.at<double>(1,1)<<endl;
-    fs << "NewCamera.cx:  " << newCameraMatrix.at<double>(0,2)<<endl;
-    fs << "NewCamera.cy:  " << newCameraMatrix.at<double>(1,2)<<endl<<endl;
 
-    fs.close();
     std::string commad("gedit "+path);
     system(commad.c_str());
 
