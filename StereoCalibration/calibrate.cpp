@@ -1,14 +1,3 @@
-﻿/*
-    Pl = Rlw * Pw+Tlw;
-    Pr = Rrw * Pw+Trw;
-
-    --Pr = Rrl * Pl + Trl
-   so =>
-    Rrl = Rrw * Rlw^T
-    Trl = Trw - Rrl * Tlw
-
-*/
-
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -30,6 +19,9 @@ void calibCamera(vector<string> &files, cv::Size boardSize, float squareSize,
                 std::vector<std::vector<cv::Point3f>> &objectPoints,
                 std::vector<cv::Mat> &rvecs, std::vector<cv::Mat> &tvecs
                  );
+
+//去畸变
+Point2f undistortmypoints(Point2f xyd , Mat distCoeffs, Mat cameraMatrix);
 
 int main(int argc,char**argv)
 {
@@ -63,7 +55,8 @@ int main(int argc,char**argv)
     std::vector<std::vector<cv::Point2f>> imagePointsRight;
 
 
-    //-----------------------------calibrate--------------------------
+    //**********************************************************单目分别标定*********************************************
+    //----calibrate--
     //left camera matrix
     cv::Mat cameraMatrixLeft;  //Camera intrinsic Matrix
     cv::Mat distCoeffsLeft;    //five parameters of distCoeffs，(k1,k2,p1,p2[,k3[,k4,k5,k6]])
@@ -79,49 +72,57 @@ int main(int argc,char**argv)
     cout<<endl<<"-------------------Right Camera intrinsic Matrix--------------------\n";
     calibCamera(rightfiles,boardSize,squareSize,rightImagePath,cameraMatrixRight,distCoeffsRight,imagePointsRight,imageSize,objectPoints,rvecsRight,tvecsRight);
 
-    //
-    /*
-        Pl = Rlw * Pw+Tlw;
-        Pr = Rrw * Pw+Trw;
 
-        --Pr = Rrl * Pl + Trl
-       so =>
-        Rrl = Rrw * Rlw^T
-        Trl = Trw - Rrl * Tlw
-
-    */
+    //************************************************对重投影进行测试********************************
     //test the eqution
     /*
-    Mat Rr,Rl;
-    cv::Rodrigues(rvecsRight[0],Rr);
-    cv::Rodrigues(rvecsLeft[0],Rl);
-    cout<<endl<<Rr*Rl.inv()<<endl;
+
+      s*x                     X                 X
+      s*y = K * [r1 r2 r3 t]* Y = K * [r1 r2 t]*Y
+       s                      0                 1
+                              1
+
+    */
+    //**** 验证外参Rve 和 tve的准确性  ****
+    // 默认选择 0 1，这里只选择一个点来进行测试，当然，你也可以多试几个
+    int k=0,j=1;//k要小于图片的数量，j要小于棋盘纸 高X宽
+    Mat Rrw,Rlw;
+    cv::Rodrigues(rvecsRight[k],Rrw);
+    cv::Rodrigues(rvecsLeft[k],Rlw);
+
+    Mat po = Mat::zeros(3,3,CV_64F);
+    po.at<double>(0,0) = Rrw.at<double>(0,0);
+    po.at<double>(1,0) = Rrw.at<double>(1,0);
+    po.at<double>(2,0) = Rrw.at<double>(2,0);
+    po.at<double>(0,1) = Rrw.at<double>(0,1);
+    po.at<double>(1,1) = Rrw.at<double>(1,1);
+    po.at<double>(2,1) = Rrw.at<double>(2,1);
+    po.at<double>(0,2) = tvecsLeft[k].at<double>(0,0);
+    po.at<double>(1,2) = tvecsLeft[k].at<double>(0,1);
+    po.at<double>(2,2) = tvecsLeft[k].at<double>(0,2);
+
+    Mat obj(3,1,CV_64F);
+    obj.at<double>(0,0) =  objectPoints[k][j].x;
+    obj.at<double>(1,0) =  objectPoints[k][j].y;
+    obj.at<double>(2,0) =  1;
+
+    Mat uv = cameraMatrixLeft*po*obj;
+
+    Point2f xyd = imagePointsleft[k][j];
+    //对该点进行畸变矫正
+    Point2f xyp = undistortmypoints(xyd,distCoeffsLeft,cameraMatrixLeft);
+
+    cout<<"Test the outer parameters（请查看下面两个数据的差距，理论上是一样的）"<<endl;
+    cout<<(uv/uv.at<double>(2,0)).t()<<endl; // [x y] = [x/w y/w]
+    cout<<xyp<<endl;
+
+    /*
+     * 这里需要说明一点，如果上面两个值输入的差距越小，说明重投影的误差小，那么由公式 Rrl = Rrw*Rlw.inv()计算
+     * 得到的，即从第一个相机到第二个相机的变换矩阵R的准确率越高；
     */
 
 
-
-    //-----------------------------stereo calibrate-------------------------
-    Mat cameraMatrix[2];
-    cameraMatrix[0] = initCameraMatrix2D(objectPoints,imagePointsleft,imageSize,0);
-    cameraMatrix[1] = initCameraMatrix2D(objectPoints,imagePointsRight,imageSize,0);
-
-    //you can also this parameters if you do not calibrate the single camera;
-    /*Then,use the codes to substitute old codes
-     *
-     *  F = findFundamentalMat(Mat(allimgpt[0]), Mat(allimgpt[1]), FM_8POINT, 0, 0);
-        Mat H1, H2;
-        stereoRectifyUncalibrated(Mat(allimgpt[0]), Mat(allimgpt[1]), F, imageSize, H1, H2, 3);
-
-        R1 = cameraMatrix[0].inv()*H1*cameraMatrix[0];
-        R2 = cameraMatrix[1].inv()*H2*cameraMatrix[1];
-        P1 = cameraMatrix[0];
-        P2 = cameraMatrix[1];
-    */
-    cout<<"initCameraMatrix2D left:\n"<<cameraMatrix[0]<<endl;
-    cout<<"initCameraMatrix2D right:\n"<<cameraMatrix[1]<<endl;
-
-
-
+    //****************************************************************双目标定*****************************************************
     cout<<endl<<"********************stereo calibrate running******************\n";
     Mat R, T, E, F;
 
@@ -130,16 +131,37 @@ int main(int argc,char**argv)
                     cameraMatrixLeft, distCoeffsLeft,
                     cameraMatrixRight, distCoeffsRight,
                     imageSize, R, T, E, F,
-                    CALIB_FIX_INTRINSIC,// CALIB_USE_INTRINSIC_GUESS
+                    CALIB_FIX_INTRINSIC,// CALIB_USE_INTRINSIC_GUESS CALIB_FIX_INTRINSIC CALIB_NINTRINSIC
                     TermCriteria(TermCriteria::COUNT+TermCriteria::EPS, 100, 1e-5) );
 
     cout << "done with RMS error=" << rms << endl;
 
+    /*
+        Pl = Rlw * Pw+Tlw;
+        Pr = Rrw * Pw+Trw;
+
+        --Pr = Rrl * Pl + Trl
+
+       so =====>
+                    Rrl = Rrw * Rlw^T
+                    Trl = Trw - Rrl * Tlw
+
+    */
+
+    //**** 验证上述公式是否成立  ****
+    //--多试试几组值，如果和最后得到的R差距非常大，很可能标定失败；
+    cout<<endl<<"Test the R(=Rrl)（与输出的R进行比较）:"<<endl;
+    cout<<endl<<Rrw*Rlw.inv()<<endl;
+
+    //如果上面Rrw*Rlw.inv() 输出结果 与R输出差距较大，可以去除下列注释测试
+    //如果最后标定输出的remap()图像效果很差，也可以去除下列注释看看测试结果
+    //R = Rrw*Rlw.inv();                      //Rrl = Rrw * Rlw^T
+    //T = tvecsRight[k] - R * tvecsLeft[k];   //Trl = Trw - Rrl * Tlw
 
     Mat R1, R2, P1, P2, Q;
     Rect validRoi[2];
 
-    //双目矫正
+    //************************************************双目矫正*******************************************
     stereoRectify(cameraMatrixLeft, distCoeffsLeft,
                   cameraMatrixRight, distCoeffsRight,
                   imageSize, R, T, R1, R2, P1, P2, Q,
@@ -153,6 +175,8 @@ int main(int argc,char**argv)
     cout<<"P1 is :\n"<<P2<<endl;
     cout<<"Q is :\n"<<Q<<endl;
 
+
+    //****************************************双目畸变矫正*************************
     //remap
     Mat rmap[2][2];
     initUndistortRectifyMap(cameraMatrixLeft, distCoeffsLeft, R1, P1, imageSize, CV_16SC2, rmap[0][0], rmap[0][1]);
@@ -175,10 +199,17 @@ int main(int argc,char**argv)
            submat = srcAnddst.colRange(ilremap.cols,ilremap.cols + irremap.cols);
            irremap.copyTo(submat);
 
-        imshow("il",srcAnddst);
+       cvtColor(srcAnddst,srcAnddst,COLOR_GRAY2BGR);
+
+       //draw rectified image
+        for (int i = 0; i < srcAnddst.rows;i+=16)
+           line(srcAnddst, Point(0, i), Point(srcAnddst.cols, i), Scalar(0, 255, 0), 1, 8);
+
+        imshow("remap",srcAnddst);
         //imshow("ir",irremap);
-        waitKey(300);
+        waitKey(500);
     }
+
 
     //save the config parameters
     //clear the old .yaml file
@@ -229,6 +260,9 @@ int main(int argc,char**argv)
 
     f.release();
 
+    //查看保存的数据
+    system("cat ./calib.yaml");
+
     return 0;
 }
 
@@ -273,7 +307,7 @@ void calibCamera(vector<string> &files, cv::Size boardSize,
         {
             TermCriteria  termCriteria;
             termCriteria = TermCriteria(TermCriteria::MAX_ITER +TermCriteria::EPS,
-                                                             30,    //maxCount
+                                                             50,    //maxCount
                                                              0.1);  //epsilon
             cornerSubPix(gray,
                          imageCorners,
@@ -295,7 +329,7 @@ void calibCamera(vector<string> &files, cv::Size boardSize,
 
     cv::destroyAllWindows();
 
-    cout<<imageSize<<endl;
+    cout<<"图像尺寸:"<<imageSize<<endl;
 
     double rms = calibrateCamera(objectPoints, // 三维点
                     imagePoints, // 图像点
@@ -310,4 +344,21 @@ void calibCamera(vector<string> &files, cv::Size boardSize,
 
     cout<<"K = \n"<<cameraMatrix<<endl;
     cout<<"distCoeffs = \n"<<distCoeffs<<endl;
+}
+
+//去畸变
+Point2f undistortmypoints(Point2f xyd , Mat distCoeffs, Mat cameraMatrix)
+{
+    double x = (xyd.x-cameraMatrix.at<double>(0,2))/cameraMatrix.at<double>(0,0);
+    double y = (xyd.y-cameraMatrix.at<double>(1,2))/cameraMatrix.at<double>(1,1);
+    double r = sqrt(x*x+y*y);
+
+    double x_distorted = (1+distCoeffs.at<double>(0,0)*r*r+distCoeffs.at<double>(0,1)*r*r*r*r+distCoeffs.at<double>(0,4)*r*r*r*r*r*r)*x
+                                     +2*distCoeffs.at<double>(0,2)*x*y+distCoeffs.at<double>(0,3)*(r*r+2*x*x);
+    double y_distorted = (1+distCoeffs.at<double>(0,0)*r*r+distCoeffs.at<double>(0,1)*r*r*r*r+distCoeffs.at<double>(0,4)*r*r*r*r*r*r)*y
+                                     +2*distCoeffs.at<double>(0,3)*x*y+distCoeffs.at<double>(0,2)*(r*r+2*y*y);
+
+    double xp = cameraMatrix.at<double>(0,0)*x_distorted+cameraMatrix.at<double>(0,2);
+    double yp = cameraMatrix.at<double>(1,1)*y_distorted+cameraMatrix.at<double>(1,2);
+    return Point2f(xp,yp);
 }
