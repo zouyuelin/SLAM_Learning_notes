@@ -21,6 +21,9 @@ void triangulation(vector<Point2f> pixel_1,vector<Point2f> pixel_2,Mat R,Mat t,v
 
 Eigen::Vector3d triangulatedByEigenSVD(Point2f pixel_1, Point2f pixel_2, Mat R, Mat t, Mat &K);
 
+Eigen::Vector3d triangulatedByEigenLeastSquare(Point2f pixel_1, Point2f pixel_2, Mat R, Mat t, Mat &K);
+
+
 bool checkRt(Mat R, Mat t, vector<Point2f> pixel_1, vector<Point2f> pixel_2);
 bool checkRt(Eigen::Matrix3d R_eigen, Eigen::Vector3d t_eigen, vector<Point2f> pixel_1, vector<Point2f> pixel_2);
 
@@ -193,10 +196,20 @@ int main(int argc,char**argv)
     delay_time = chrono::duration_cast<chrono::duration<double>>(t2 - t1); //milliseconds 毫秒
     cout<<"三角测量 Eigen SVD 耗时:"<<delay_time.count()<<"秒"<<endl;
 
+    t1 = chrono::steady_clock::now();
+    vector<Eigen::Vector3d> points_1_LeastSquare;
+    for(auto i=0;i<pixel_1.size();i++)
+        points_1_LeastSquare.push_back(triangulatedByEigenLeastSquare(pixel_1[i],pixel_2[i],R,t,K));
+    t2 = chrono::steady_clock::now();
+    delay_time = chrono::duration_cast<chrono::duration<double>>(t2 - t1); //milliseconds 毫秒
+    cout<<"三角测量 LeastSquare 耗时:"<<delay_time.count()<<"秒"<<endl;
+
     //--输出比较
     for(size_t i = 0;i<5;i++)
     {
-        cout<<"opencv:   "<<points_1[i]<<endl<<"svd Eigen:"<<points_1_compare[i].transpose()<<endl;
+        cout<<"opencv:   "<<points_1[i]<<endl
+            <<"svd Eigen:"<<points_1_compare[i].transpose()<<endl
+            <<"LeastSquare: "<<points_1_LeastSquare[i].transpose()<<endl;
         cout<<"----\n";
     }
 
@@ -347,6 +360,30 @@ Eigen::Vector3d triangulatedByEigenSVD(Point2f pixel_1,Point2f pixel_2,Mat R,Mat
     p_w /= p_w(3,0);
 
     return Eigen::Vector3d(p_w(0),p_w(1),p_w(2));
+}
+
+Eigen::Vector3d triangulatedByEigenLeastSquare(Point2f pixel_1, Point2f pixel_2, Mat R, Mat t, Mat &K)
+{
+    Eigen::Vector3d point_1,point_2;
+    point_1<<pixel_1.x,pixel_1.y,1;
+    point_2<<pixel_2.x,pixel_2.y,1;
+
+    Eigen::Matrix3d K_eigen,R_eigen;
+    Eigen::Vector3d t_eigen;
+    cv::cv2eigen(K,K_eigen);//eigen 类型的K内参
+    cv::cv2eigen(R,R_eigen);//eigen 类型的R
+    cv::cv2eigen(t,t_eigen);//eigen 类型的t
+
+    Eigen::Matrix<double,3,2> A;
+    A.block(0,0,3,1) = -R_eigen*K_eigen.inverse()*point_1;
+    A.block(0,1,3,1) = K_eigen.inverse()*point_2;
+
+    //行满秩 最小二乘解：x = A^T * (A*A^T)^-1 b
+    //列满秩 最小二乘解：x = (A^T*A)^-1 * A^T b
+    Eigen::Vector2d d =(A.transpose()*A).inverse()*A.transpose()*t_eigen;//d[0],d[1]就是相机坐标系1 和 2下特征点深度
+
+    Eigen::Vector3d p1 = d[0]*K_eigen.inverse()*point_1;
+    return p1;
 }
 
 bool checkRt(Mat R,Mat t,vector<Point2f> pixel_1,vector<Point2f> pixel_2)
