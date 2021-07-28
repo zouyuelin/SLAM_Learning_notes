@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
@@ -74,6 +74,9 @@ int main(int argc,char**argv)
     Mat essential_matrix;
     int focalLength = K.at<double>(1,1);
     Point2d principal_point = Point2d(K.at<double>(0, 2),K.at<double>(1, 2));
+    Mat fundamentalMat = findFundamentalMat(pixel_1,pixel_2,cv::FM_RANSAC);
+    cout<<"基础矩阵：\n"<<fundamentalMat<<endl;
+
     essential_matrix = findEssentialMat ( pixel_1, pixel_2, focalLength , principal_point);
     cout<<"本质矩阵：\n"<<essential_matrix<<endl;
     //-------利用OpenCV恢复运动------
@@ -176,15 +179,17 @@ int main(int argc,char**argv)
 
     //************************************三角测量:start*********************************//
     //opencv三角测量
+    t1 = chrono::steady_clock::now();
     triangulation(pixel_1,pixel_2,R,t,points_1);//利用三角测量得到P1
     t2 = chrono::steady_clock::now();
     delay_time = chrono::duration_cast<chrono::duration<double>>(t2 - t1); //milliseconds 毫秒
     cout<<"三角测量 OpenCV 耗时:"<<delay_time.count()<<"秒"<<endl;
 
-    t2 = chrono::steady_clock::now();
+    t1 = chrono::steady_clock::now();
     vector<Eigen::Vector3d> points_1_compare;
     for(auto i=0;i<pixel_1.size();i++)
         points_1_compare.push_back(triangulatedByEigenSVD(pixel_1[i],pixel_2[i],R,t,K));
+    t2 = chrono::steady_clock::now();
     delay_time = chrono::duration_cast<chrono::duration<double>>(t2 - t1); //milliseconds 毫秒
     cout<<"三角测量 Eigen SVD 耗时:"<<delay_time.count()<<"秒"<<endl;
 
