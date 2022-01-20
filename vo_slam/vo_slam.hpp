@@ -263,7 +263,7 @@ Eigen::Vector3d camera::ToEulerAngles(Eigen::Quaterniond q) {
     return Eigen::Vector3d(x,y,z);
 }
 
-VO_slam::VO_slam():state_(VOstate::INITIALIZING),pose_max_trans(0.2),pose_min_trans(0.003),keyFrame_min_trans(0.006),KeyFrame_max_trans(0.2)
+VO_slam::VO_slam():state_(VOstate::INITIALIZING),pose_max_trans(0.2),pose_min_trans(0.0005),keyFrame_min_trans(0.002),KeyFrame_max_trans(0.2)
 {
     map_ = std::make_shared<Map>();
     visual_ = std::make_shared<visualMap>();
@@ -300,10 +300,6 @@ void VO_slam::tracking(Mat img, Mat depth)
             map_->add3Dpts_world(frame_cur.pts_3d);
             visual_->keyposes.push_back(Eigen::Isometry3d(map_->pose_cur_Tcw.matrix().inverse()));
         }
-    }
-    else
-    {
-        return;
     }
 
 //    map_->map_points.find((unsigned long)(map_->KeyPoses.size()-1));
