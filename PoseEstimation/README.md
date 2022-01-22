@@ -7,9 +7,9 @@ python posenet.py
 ```
 
 将模型转换为 onnx
-
+```shell
 python -m tf2onnx.convert --saved-model kerasTempModel --output "model.onnx" --opset 14
-
+```
 # C++上部署模型
 需要的库：
 onnxruntime : cuda tensorRT(没有也可以不用)
@@ -21,10 +21,13 @@ eigen
 sophus
 
 编译方法：
+```shell
 mkdir build
 cd build
 cmake ..
 make -j
-
+```
 运行方法：
+```shell
 ./PoseImageNet /PATH_TO_YOUR_DATASETS(TUM)
+```
