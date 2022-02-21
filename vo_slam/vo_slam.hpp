@@ -1,4 +1,4 @@
-﻿//g2o
+//g2o
 #include <g2o/core/base_vertex.h>
 #include <g2o/core/base_unary_edge.h>
 #include <g2o/core/sparse_optimizer.h>
@@ -67,7 +67,8 @@ public:
 
 };
 cv::FileStorage camera::configfile = cv::FileStorage();
-cv::Mat camera::K = (cv::Mat_<double>(3, 3) << 517.3, 0, 325.1, 0, 516.5, 249.7, 0, 0, 1);
+//cv::Mat camera::K = (cv::Mat_<double>(3, 3) << 603.47, 0, 314.912, 0, 600.49, 234.941, 0, 0, 1);
+cv::Mat camera::K = (cv::Mat_<double>(3, 3) << 517.3, 0, 325.1, 0, 516.5, 249.7, 0, 0, 1); //fr1
 //K = (cv::Mat_<double>(3, 3) << 520.9, 0, 325.1, 0, 521.0, 249.7, 0, 0, 1);//fr2
 Eigen::Matrix3d camera::K_Eigen = Eigen::Matrix3d::Identity(3,3);
 cv::Mat camera::distCoeffs = cv::Mat::zeros(5,1,CV_64F);
@@ -75,6 +76,7 @@ cv::Mat camera::distCoeffs = cv::Mat::zeros(5,1,CV_64F);
 class Frame
 {
 public:
+    Frame(){}
     Frame(cv::Mat img,cv::Mat depth);
     inline void detectKeyPoints();
     inline void computeDescriptors();
@@ -88,6 +90,9 @@ public:
     static cv::FlannBasedMatcher matcher;// = cv::flann::LshIndexParams(5,10,2);// = DescriptorMatcher::create("BruteForce-Hamming")
 };
 
+cv::FlannBasedMatcher Frame::matcher = cv::FlannBasedMatcher(new cv::flann::LshIndexParams(5,10,2));
+cv::Ptr<ORB> Frame::detector_ORB = ORB::create(800,1.2,4);
+
 class Map
 {
 public:
@@ -100,6 +105,8 @@ public:
     unordered_map<unsigned long,vector<cv::Point3f> > map_points;
     vector<Frame> keyFrames;
     vector<Sophus::SE3> KeyPoses;
+    Frame frame_ref;
+    Sophus::SE3 pose_ref;
 
     Sophus::SE3 pose_cur_Tcw;
 };
@@ -181,8 +188,6 @@ public:
 
 };
 
-cv::FlannBasedMatcher Frame::matcher = cv::FlannBasedMatcher(new cv::flann::LshIndexParams(5,10,2));
-cv::Ptr<ORB> Frame::detector_ORB = ORB::create(800,1.2,4);
 
 void camera::loadYaml(std::string path)
 {
@@ -282,17 +287,26 @@ void VO_slam::tracking(Mat img, Mat depth)
         map_->addKeyPoses(Sophus::SE3());
         map_->add3Dpts_world(frame_cur.pts_3d);
         state_ = VOstate::OK;
+        //ref frame
+        map_->frame_ref = frame_cur;
+        map_->pose_ref = Sophus::SE3();
         return;
     }
-    //ref frame
-    Frame frame_ref = map_->keyFrames[map_->keyFrames.size()-1];
+
+    Frame frame_key = map_->keyFrames[map_->keyFrames.size()-1];
     //pose estimate
-    Sophus::SE3 pose = pnpSolver(frame_ref,frame_cur);
+    Sophus::SE3 pose;
+
+    pose = pnpSolver(map_->frame_ref,frame_cur);
 
     if(checkEstimatedPose(pose)== true)
     {
         //updata current pose
-        map_->pose_cur_Tcw = pose*map_->pose_cur_Tcw;
+//        map_->pose_cur_Tcw = pose*map_->KeyPoses[map_->KeyPoses.size()-1].inverse();
+        map_->pose_cur_Tcw = pose*map_->pose_ref;
+        //ref frame
+        map_->frame_ref = frame_cur;
+        map_->pose_ref = map_->pose_cur_Tcw;
         if(checkKeyFrame(pose) == true)
         {
             map_->addKeyFrames(frame_cur);
@@ -301,6 +315,8 @@ void VO_slam::tracking(Mat img, Mat depth)
             visual_->keyposes.push_back(Eigen::Isometry3d(map_->pose_cur_Tcw.matrix().inverse()));
         }
     }
+
+
 
 //    map_->map_points.find((unsigned long)(map_->KeyPoses.size()-1));
     visual_->drawing(Eigen::Isometry3d(map_->pose_cur_Tcw.matrix().inverse()));
@@ -519,7 +535,7 @@ Sophus::SE3 VO_slam::pnpSolver(Frame frame_ref, Frame frame_cur)
 
     Sophus::SE3 pose;
     //solvePnP_opencv(pts_3d_eigen,pts_2d_eigen,K,pose);
-    //solvePnP_BA(pts_3d_eigen,pts_2d_eigen,K,pose);
+    //solvePnP_BA(pts_3d_eigen,pts_2d_eigen,camera::K,pose);
     solvePnP_ProjectToPose(pts_3d_eigen,pts_2d_eigen,camera::K,pose);
     return pose;
 }
@@ -791,5 +807,6 @@ void Map::add3Dpts_world(std::vector<Point3f> pts_3d_Pc)
     map_points.insert(make_pair((unsigned long)(KeyPoses.size()-1),contains));
 
 }
+
 
 
