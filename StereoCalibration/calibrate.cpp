@@ -172,7 +172,7 @@ int main(int argc,char**argv)
     cout<<"R1 is :\n"<<R1<<endl;
     cout<<"R2 is :\n"<<R2<<endl;
     cout<<"P1 is :\n"<<P1<<endl;
-    cout<<"P1 is :\n"<<P2<<endl;
+    cout<<"P2 is :\n"<<P2<<endl;
     cout<<"Q is :\n"<<Q<<endl;
 
 
@@ -216,7 +216,7 @@ int main(int argc,char**argv)
     String path = "./calib.yaml";
     ofstream fs(path);
     fs.clear();
-
+    fs << "%YAML:1.0"<<endl;
     fs << "# ------left camera Intrinsic--------"<<endl;
     fs << "Left.Camera.fx:  " << cameraMatrixLeft.at<double>(0,0)<<endl;
     fs << "Left.Camera.fy:  " << cameraMatrixLeft.at<double>(1,1)<<endl;
@@ -257,6 +257,11 @@ int main(int argc,char**argv)
     f<<"P1"<<P1;
     f<<"P2"<<P2;
     f<<"Q"<<Q;
+  
+    f<<"cameraMatrixLeft_M1"<<cameraMatrixLeft;
+    f<<"distCoeffsLeft_D1"<<distCoeffsLeft;
+    f<<"cameraMatrixRight_M2"<<cameraMatrixRight;
+    f<<"distCoeffsRight_D2"<<distCoeffsRight;
 
     f.release();
 
