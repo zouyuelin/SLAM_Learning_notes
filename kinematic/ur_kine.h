@@ -17,6 +17,9 @@ namespace ur_Kinematics {
   //                in case of an infinite solution on that joint.
   // @return        Number of solutions found (maximum of 8)
   int inverse(const double* T, double* q_sols, double q6_des=0.0);
+  // @param q       The 6 joint values
+  // @param J       The 6x6 jacobian of robot arm in row-major ordering
+  void jacobian(const double* q, double* J);
 };
 
 
