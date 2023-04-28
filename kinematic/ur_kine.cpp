@@ -53,19 +53,23 @@ namespace ur_Kinematics {
     double s6 = sin(*q), c6 = cos(*q);
     double s23 = sin(q23), c23 = cos(q23);
     double s234 = sin(q234), c234 = cos(q234);
-    *T = c234*c1*s5 - c5*s1; T++;
-    *T = c6*(s1*s5 + c234*c1*c5) - s234*c1*s6; T++;
-    *T = -s6*(s1*s5 + c234*c1*c5) - s234*c1*c6; T++;
-    *T = d6*c234*c1*s5 - a3*c23*c1 - a2*c1*c2 - d6*c5*s1 - d5*s234*c1 - d4*s1; T++;
-    *T = c1*c5 + c234*s1*s5; T++;
-    *T = -c6*(c1*s5 - c234*c5*s1) - s234*s1*s6; T++;
+    *T =   c6*(s1*s5 + c234*c1*c5) - s234*c1*s6; T++;
+    *T = - s6*(s1*s5 + c234*c1*c5) - s234*c1*c6; T++;
+    *T = c5*s1 - c234*c1*s5; T++;
+    *T =d6*(c5*s1 - c234*c1*s5) + c1*(a3*c23 + a2*c2) + d4*s1 + d5*s234*c1; T++;
+    *T = - c6*(c1*s5 - c234*c5*s1) - s234*s1*s6; T++;
     *T = s6*(c1*s5 - c234*c5*s1) - s234*c6*s1; T++;
-    *T = d6*(c1*c5 + c234*s1*s5) + d4*c1 - a3*c23*s1 - a2*c2*s1 - d5*s234*s1; T++;
+    *T = - c1*c5 - c234*s1*s5; T++;
+    *T =s1*(a3*c23 + a2*c2) - d4*c1 - d6*(c1*c5 + c234*s1*s5) + d5*s234*s1; T++;
+    *T =                                       c234*s6 + s234*c5*c6; T++;
+    *T = c234*c6 - s234*c5*s6; T++;
     *T = -s234*s5; T++;
-    *T = -c234*s6 - s234*c5*c6; T++;
-    *T = s234*c5*s6 - c234*c6; T++;
-    *T = d1 + a3*s23 + a2*s2 - d5*(c23*c4 - s23*s4) - d6*s5*(c23*s4 + s23*c4); T++;
-    *T = 0.0; T++; *T = 0.0; T++; *T = 0.0; T++; *T = 1.0;
+    *T =                                                      d1 + a3*s23 + a2*s2 - d5*c234 - d6*s234*s5; T++;
+    *T =                                                                                                   0; T++;
+    *T = 0; T++;
+    *T = 0; T++;
+    *T =                                                                                                                                            1; T++;
+    
   }
   
   void jacobian(const double* q, double* J){
