@@ -67,6 +67,60 @@ namespace ur_Kinematics {
     *T = d1 + a3*s23 + a2*s2 - d5*(c23*c4 - s23*s4) - d6*s5*(c23*s4 + s23*c4); T++;
     *T = 0.0; T++; *T = 0.0; T++; *T = 0.0; T++; *T = 1.0;
   }
+  
+  void jacobian(const double* q, double* J){
+    double s1 = sin(*q), c1 = cos(*q); q++;
+    double q23 = *q, q234 = *q, s2 = sin(*q), c2 = cos(*q); q++;
+    double s3 = sin(*q), c3 = cos(*q); q23 += *q; q234 += *q; q++;
+    double s4 = sin(*q), c4 = cos(*q); q234 += *q; q++;
+    double s5 = sin(*q), c5 = cos(*q), q2345 = q234 + *q,q234_5 = q234 - *q; q++;
+    double s6 = sin(*q), c6 = cos(*q);
+    double s23 = sin(q23), c23 = cos(q23);
+    double s234 = sin(q234), c234 = cos(q234);
+    double s2345 = sin(q2345), s234_5 = sin(q234_5);
+
+    *J = (c1*c5 + c234*s1*s5)*d6 + d4*c1 - a2*c2*s1 - d5*s234*s1 - a3*c2*c3*s1 + a3*s1*s2*s3;J++;
+    *J = c1*s5*(c23*s4 + s23*c4)*d6 - c1*(a3*s23 + a2*s2 - d5*(c23*c4 - s23*s4)); J++;
+    *J = s234*c1*s5*d6 - c1*(a3*s23 - d5*c234); J++;
+    *J = s234*c1*s5*d6 + d5*c234*c1; J++;
+    *J = (c1*c2*c5*s3*s4 - c1*c2*c3*c4*c5 - s1*s5 + c1*c3*c5*s2*s4 + c1*c4*c5*s2*s3)*d6; J++;
+    *J = 0; J++;
+
+    *J = (c5*s1 - c234*c1*s5)*d6 + d4*s1 + a2*c1*c2 + d5*s234*c1 + a3*c1*c2*c3 - a3*c1*s2*s3;J++;
+    *J = s1*s5*(c23*s4 + s23*c4)*d6 - s1*(a3*s23 + a2*s2 - d5*(c23*c4 - s23*s4)); J++;
+    *J = s234*s1*s5*d6 - s1*(a3*s23 - d5*c234); J++;
+    *J = s234*s1*s5*d6 + d5*c234*s1; J++;
+    *J = (c1*s5 - c2*c3*c4*c5*s1 + c2*c5*s1*s3*s4 + c3*c5*s1*s2*s4 + c4*c5*s1*s2*s3)*d6; J++;
+    *J = 0; J++;
+
+    *J = 0;J++;
+    *J = (s234_5/2 - s2345/2)*d6 + a3*c23 + a2*c2 + d5*s234; J++;
+    *J = (s234_5/2 - s2345/2)*d6 + a3*c23 + d5*s234; J++;
+    *J = (s234_5/2 - s2345/2)*d6 + d5*s234; J++;
+    *J = (- s2345/2 - s234_5/2)*d6; J++;
+    *J = 0; J++;
+
+    *J = 0; J++;
+    *J = s1; J++;
+    *J = s1; J++;
+    *J = s1; J++;
+    *J = s234 * c1; J++;
+    *J = c5*s1 - c234*c1*s5; J++;
+
+    *J = 0; J++;
+    *J = -c1; J++;
+    *J = -c1; J++;
+    *J = -c1; J++;
+    *J = s234 * s1; J++;
+    *J = - c1*c5 - c234*s1*s5; J++;
+
+    *J = 1; J++;
+    *J = 0; J++;
+    *J = 0; J++;
+    *J = 0; J++;
+    *J = -c234; J++;
+    *J = -s234 * s5; J++;
+  }
 
   void forward_all(const double* q, double* T1, double* T2, double* T3,
                                     double* T4, double* T5, double* T6) {
